@@ -1,11 +1,23 @@
 import express from 'express';
+import logger from './middlewares/logger.js';
+import errorHandler from './middlewares/errorMiddleware.js';
+import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 
+// Global Middlewares
 app.use(express.json());
+app.use(logger);
 
+// Health Check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'City Planner API is running' });
 });
+
+// Routes
+app.use('/api/auth', authRoutes);
+
+// Centralized Error Handler (must be last)
+app.use(errorHandler);
 
 export default app;
