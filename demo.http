@@ -1,0 +1,105 @@
+@baseUrl = http://localhost:5000/api
+
+### 1. Health Check
+GET {{baseUrl}}/health
+
+### 2. Register User (Run once)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Junior Developer",
+  "email": "juniordeveloper@figzol.com",
+  "password": "password123"
+}
+
+### 3. Login User (Captures token automatically!)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "juniordeveloper@figzol.com",
+  "password": "password123"
+}
+
+### 4. Create Weather-Enriched Plan (Captures plan ID automatically!)
+# @name createPlan
+POST {{baseUrl}}/plans
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "Client Onboarding & API Demo",
+  "city": "Islamabad",
+  "plan_date": "2026-11-28",
+  "notes": "Prepare deployment checklist and review database schema"
+}
+
+### 5. Get All User Plans
+GET {{baseUrl}}/plans
+Authorization: Bearer {{login.response.body.token}}
+
+### 6. Update Plan City & Details
+PUT {{baseUrl}}/plans/{{createPlan.response.body.plan.id}}
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "Q4 Product Roadmap Sync",
+  "city": "London",
+  "plan_date": "2026-12-03",
+  "notes": "Finalize sprint milestones with remote engineering team"
+}
+
+### 7. Delete Plan
+DELETE {{baseUrl}}/plans/{{createPlan.response.body.plan.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### 8. Security Test: Cross-User Isolation (User B tries to access User A's plan)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Second User",
+  "email": "userb@figzol.com",
+  "password": "password123"
+}
+
+###
+# @name loginUserB
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "userb@figzol.com",
+  "password": "password123"
+}
+
+### User B tries to read User A's plan ID (Should return 404 Plan not found)
+GET {{baseUrl}}/plans/{{createPlan.response.body.plan.id}}
+Authorization: Bearer {{loginUserB.response.body.token}}
+
+### 9. Edge Case: Duplicate Email Registration (Should return 409)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Duplicate User",
+  "email": "lead@figzol.com",
+  "password": "password123"
+}
+
+### 10. Edge Case: Invalid City Lookup (Should return 404)
+POST {{baseUrl}}/plans
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "Impossible Trip",
+  "city": "NotARealCityXYZ999",
+  "plan_date": "2026-12-10"
+}
+
+### 11. Security Test: Missing Auth Header (Should return 401)
+GET {{baseUrl}}/plans
