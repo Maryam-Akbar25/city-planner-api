@@ -21,6 +21,11 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/plans', planRoutes);  
 
+// 404 Handler for unmatched routes/unknown visitors
+app.use((req, res) => {
+  res.status(404).json({ error: `Route ${req.method} ${req.originalUrl} not found.` });
+});
+
 // Centralized Error Handler (must be last)
 app.use(errorHandler);
 
