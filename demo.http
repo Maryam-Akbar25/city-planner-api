@@ -1,105 +1,164 @@
 @baseUrl = http://localhost:5000/api
 
-### 1. Health Check
+### ==========================================
+### 1. SYSTEM & AUTHENTICATION FLOW
+### ==========================================
+
+### 1A. Health Check
 GET {{baseUrl}}/health
 
-### 2. Register User (Run once)
+### 1B. Register Fresh Demo User (Run once during live demo)
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "name": "Junior Developer",
-  "email": "juniordeveloper@figzol.com",
-  "password": "password123"
+  "name": "Engineering Lead",
+  "email": "review.demo@figzol.com",
+  "password": "Password@2026"
 }
 
-### 3. Login User (Captures token automatically!)
-# @name login
+### 1C. Login Demo User (Auto-captures JWT token)
+# @name loginDemo
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "juniordeveloper@figzol.com",
-  "password": "password123"
+  "email": "review.demo@figzol.com",
+  "password": "Password@2026"
 }
 
-### 4. Create Weather-Enriched Plan (Captures plan ID automatically!)
-# @name createPlan
+### 1D. Get Current Authenticated Profile
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{loginDemo.response.body.token}}
+
+
+### ==========================================
+### 2. CORE CRUD + LIVE OPEN-METEO WEATHER
+### ==========================================
+
+### 2A. Create Plan #1 (Auto-captures Plan ID & fetches live weather)
+# @name primaryPlan
 POST {{baseUrl}}/plans
-Authorization: Bearer {{login.response.body.token}}
+Authorization: Bearer {{loginDemo.response.body.token}}
 Content-Type: application/json
 
 {
-  "title": "Client Onboarding & API Demo",
-  "city": "Islamabad",
-  "plan_date": "2026-11-28",
-  "notes": "Prepare deployment checklist and review database schema"
+  "title": "Backend Architecture & API Review",
+  "city": "Lahore",
+  "plan_date": "2026-11-25",
+  "notes": "Demonstrate MVC layers, JWT middleware, and SQLite schema"
 }
 
-### 5. Get All User Plans
+### 2B. Create Plan #2 (Second city for list comparison)
+POST {{baseUrl}}/plans
+Authorization: Bearer {{loginDemo.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "Cloud Deployment Planning",
+  "city": "Tokyo",
+  "plan_date": "2026-12-02",
+  "notes": "Evaluate production hosting and environment secrets"
+}
+
+### 2C. Read All Plans for Logged-In User
 GET {{baseUrl}}/plans
-Authorization: Bearer {{login.response.body.token}}
+Authorization: Bearer {{loginDemo.response.body.token}}
 
-### 6. Update Plan City & Details
-PUT {{baseUrl}}/plans/{{createPlan.response.body.plan.id}}
-Authorization: Bearer {{login.response.body.token}}
+### 2D. Read Single Plan by ID (Fetches fresh live weather snapshot)
+GET {{baseUrl}}/plans/{{primaryPlan.response.body.plan.id}}
+Authorization: Bearer {{loginDemo.response.body.token}}
+
+### 2E. Update Plan City & Details (Triggers fresh weather lookup for London)
+PUT {{baseUrl}}/plans/{{primaryPlan.response.body.plan.id}}
+Authorization: Bearer {{loginDemo.response.body.token}}
 Content-Type: application/json
 
 {
-  "title": "Q4 Product Roadmap Sync",
+  "title": "International Engineering Sync",
   "city": "London",
-  "plan_date": "2026-12-03",
-  "notes": "Finalize sprint milestones with remote engineering team"
+  "plan_date": "2026-12-05",
+  "notes": "Updated city triggers automatic Open-Meteo re-fetch"
 }
 
-### 7. Delete Plan
-DELETE {{baseUrl}}/plans/{{createPlan.response.body.plan.id}}
-Authorization: Bearer {{login.response.body.token}}
 
-### 8. Security Test: Cross-User Isolation (User B tries to access User A's plan)
+### ==========================================
+### 3. SECURITY & EDGE-CASE VERIFICATION
+### ==========================================
+
+### 3A. Edge Case: Duplicate Email Registration (Expected: 409 Conflict)
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "name": "Second User",
-  "email": "userb@figzol.com",
-  "password": "password123"
+  "name": "Duplicate Tester",
+  "email": "review.demo@figzol.com",
+  "password": "Password@2026"
+}
+
+### 3B. Security: Missing Authorization Header (Expected: 401 Unauthorized)
+GET {{baseUrl}}/plans
+
+### 3C. Security: Tampered / Invalid JWT Token (Expected: 401 Unauthorized)
+GET {{baseUrl}}/plans
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalidpayload.tampered
+
+### 3D. Security: Cross-User Isolation / IDOR Check (Register & Login User B)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "External User B",
+  "email": "intruder.b@figzol.com",
+  "password": "Password@2026"
 }
 
 ###
-# @name loginUserB
+# @name loginIntruder
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "userb@figzol.com",
-  "password": "password123"
+  "email": "intruder.b@figzol.com",
+  "password": "Password@2026"
 }
 
-### User B tries to read User A's plan ID (Should return 404 Plan not found)
-GET {{baseUrl}}/plans/{{createPlan.response.body.plan.id}}
-Authorization: Bearer {{loginUserB.response.body.token}}
+### User B attempts to read Demo User's Plan ID (Expected: 404 Plan not found)
+GET {{baseUrl}}/plans/{{primaryPlan.response.body.plan.id}}
+Authorization: Bearer {{loginIntruder.response.body.token}}
 
-### 9. Edge Case: Duplicate Email Registration (Should return 409)
-POST {{baseUrl}}/auth/register
-Content-Type: application/json
-
-{
-  "name": "Duplicate User",
-  "email": "lead@figzol.com",
-  "password": "password123"
-}
-
-### 10. Edge Case: Invalid City Lookup (Should return 404)
+### 3E. Edge Case: Missing Required Fields (Expected: 400 Bad Request)
 POST {{baseUrl}}/plans
-Authorization: Bearer {{login.response.body.token}}
+Authorization: Bearer {{loginDemo.response.body.token}}
 Content-Type: application/json
 
 {
-  "title": "Impossible Trip",
-  "city": "NotARealCityXYZ999",
-  "plan_date": "2026-12-10"
+  "title": "Incomplete Plan Without City or Date"
 }
 
-### 11. Security Test: Missing Auth Header (Should return 401)
-GET {{baseUrl}}/plans
+### 3F. Edge Case: Non-Existent City Geocoding Lookup (Expected: 404 Not Found)
+POST {{baseUrl}}/plans
+Authorization: Bearer {{loginDemo.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "Unknown Destination",
+  "city": "AtlantisNonExistentCity999",
+  "plan_date": "2026-12-15"
+}
+
+### 3G. Edge Case: Unmatched API Endpoint (Expected: 404 Route not found)
+GET {{baseUrl}}/non-existent-route
+
+
+### ==========================================
+### 4. CLEANUP / DELETE OPERATION
+### ==========================================
+
+### 4A. Delete Primary Plan (Expected: 200 Plan deleted successfully)
+DELETE {{baseUrl}}/plans/{{primaryPlan.response.body.plan.id}}
+Authorization: Bearer {{loginDemo.response.body.token}}
+
+### 4B. Verify Deleted Plan No Longer Exists (Expected: 404 Plan not found)
+GET {{baseUrl}}/plans/{{primaryPlan.response.body.plan.id}}
+Authorization: Bearer {{loginDemo.response.body.token}}

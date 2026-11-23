@@ -1,6 +1,8 @@
 //(Main entry point for the City Planner API, setting up Express app, routes, and middlewares,
 // wiring everything together)
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
 import logger from './middlewares/logger.js';
 import errorHandler from './middlewares/errorMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
@@ -12,6 +14,9 @@ const app = express();
 app.use(express.json());
 app.use(logger);
 
+// Interactive Swagger API Docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Health Check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'City Planner API is running' });
@@ -19,9 +24,9 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/plans', planRoutes);  
+app.use('/api/plans', planRoutes);
 
-// 404 Handler for unmatched routes/unknown visitors
+// 404 Handler for unmatched routes
 app.use((req, res) => {
   res.status(404).json({ error: `Route ${req.method} ${req.originalUrl} not found.` });
 });
