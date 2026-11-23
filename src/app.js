@@ -1,7 +1,10 @@
+//(Main entry point for the City Planner API, setting up Express app, routes, and middlewares,
+// wiring everything together)
 import express from 'express';
 import logger from './middlewares/logger.js';
 import errorHandler from './middlewares/errorMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
+import planRoutes from './routes/planRoutes.js';
 
 const app = express();
 
@@ -16,6 +19,7 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/plans', planRoutes);  
 
 // Centralized Error Handler (must be last)
 app.use(errorHandler);

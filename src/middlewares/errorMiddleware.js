@@ -1,3 +1,4 @@
+//(Centralized error handler for Express 5)
 const errorHandler = (err, req, res, next) => {
   console.error('Unhandled Error:', err.stack || err.message);
   const statusCode = err.statusCode || 500;

@@ -1,3 +1,4 @@
+//authentication routes for user registration, login, and retrieving user information
 import { Router } from 'express';
 import { register, login, getMe } from '../controllers/authController.js';
 import verifyToken from '../middlewares/authMiddleware.js';

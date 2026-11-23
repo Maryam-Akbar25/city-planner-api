@@ -1,3 +1,4 @@
+//to handle database queries cleanly
 import db from '../config/db.js';
 
 const User = {

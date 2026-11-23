@@ -1,3 +1,4 @@
+//(Verifies the Bearer <token> header and attaches the user ID to req.user)
 import jwt from 'jsonwebtoken';
 
 const verifyToken = (req, res, next) => {
