@@ -1,6 +1,7 @@
 //(Main entry point for the City Planner API, setting up Express app, routes, and middlewares,
 // wiring everything together)
 import express from 'express';
+import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import logger from './middlewares/logger.js';
@@ -11,6 +12,7 @@ import planRoutes from './routes/planRoutes.js';
 const app = express();
 
 // Global Middlewares
+app.use(cors());
 app.use(express.json());
 app.use(logger);
 
